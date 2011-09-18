@@ -444,6 +444,16 @@ static void handleconnection(int sock,MYLDAP_SESSION *session)
     case NSLCD_ACTION_PAM_SESS_O:       (void)nslcd_pam_sess_o(fp,session); break;
     case NSLCD_ACTION_PAM_SESS_C:       (void)nslcd_pam_sess_c(fp,session); break;
     case NSLCD_ACTION_PAM_PWMOD:        (void)nslcd_pam_pwmod(fp,session,uid); break;
+
+#ifdef HAVE_SSH_KEYRING_SUPPORT
+    case NSLCD_ACTION_SSH_KEYRING_ADD:     (void)nslcd_ssh_keyring_add(fp,session,uid); break;
+    case NSLCD_ACTION_SSH_KEYRING_ALL:     (void)nslcd_ssh_keyring_all(fp,session,uid); break;
+    case NSLCD_ACTION_SSH_KEYRING_ALLPUB:  (void)nslcd_ssh_keyring_allpub(fp,session,uid); break;
+    case NSLCD_ACTION_SSH_KEYRING_BYID:    (void)nslcd_ssh_keyring_byid(fp,session,uid); break;
+    case NSLCD_ACTION_SSH_KEYRING_RMALL:   (void)nslcd_ssh_keyring_rmall(fp,session,uid); break;
+    case NSLCD_ACTION_SSH_KEYRING_RMBYID:  (void)nslcd_ssh_keyring_rmbyid(fp,session,uid); break;
+#endif /* HAVE_SSH_KEYRING_SUPPORT */
+
     default:
       log_log(LOG_WARNING,"invalid request id: %d",(int)action);
       break;

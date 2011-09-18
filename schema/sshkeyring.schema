@@ -1,0 +1,70 @@
+# 
+# sshKeyring Extension Schema
+## Copyright 2011 axn software UG (haftungsbeschränkt)
+## All rights reserved.
+##
+## Licensed under the Creative Commons...
+##
+
+objectIdentifier	de.axn-software.ldap.oss							1.3.6.1.4.1.38570.055
+objectIdentifier	de.axn-software.ldap.oss.commons						de.axn-software.ldap.oss:1
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto						de.axn-software.ldap.oss.commons:1
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.attrs					de.axn-software.ldap.oss.commons.crypto:1
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.attrs.identifier			de.axn-software.ldap.oss.commons.crypto.attrs:1
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.attrs.type				de.axn-software.ldap.oss.commons.crypto.attrs:2
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.attrs.private				de.axn-software.ldap.oss.commons.crypto.attrs:3
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.attrs.public				de.axn-software.ldap.oss.commons.crypto.attrs:4
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.attrs.sshPublicKey			de.axn-software.ldap.oss.commons.crypto.attrs:5
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.classes					de.axn-software.ldap.oss.commons.crypto:2
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.classes.abstractKeyring			de.axn-software.ldap.oss.commons.crypto.classes:1
+objectIdentifier	de.axn-software.ldap.oss.commons.crypto.classes.abstractKey			de.axn-software.ldap.oss.commons.crypto.classes:2
+objectIdentifier	de.axn-software.ldap.oss.modules						de.axn-software.ldap.oss:2
+objectIdentifier	de.axn-software.ldap.oss.modules.sshKeyring					de.axn-software.ldap.oss.modules:1
+objectIdentifier	de.axn-software.ldap.oss.modules.sshKeyring.classes				de.axn-software.ldap.oss.modules.sshKeyring:2
+objectIdentifier	de.axn-software.ldap.oss.modules.sshKeyring.classes.ldapPublicKey		de.axn-software.ldap.oss.modules.sshKeyring.classes:1
+objectIdentifier	de.axn-software.ldap.oss.modules.sshKeyring.classes.sshKeyring			de.axn-software.ldap.oss.modules.sshKeyring.classes:2
+objectIdentifier	de.axn-software.ldap.oss.modules.sshKeyring.classes.sshIdentity			de.axn-software.ldap.oss.modules.sshKeyring.classes:3
+
+
+attributeType ( de.axn-software.ldap.oss.commons.crypto.attrs.identifier NAME ( 'keyIdentifier' )
+	EQUALITY caseIgnoreMatch
+	SINGLE-VALUE
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128} )
+
+attributeType ( de.axn-software.ldap.oss.commons.crypto.attrs.type NAME ( 'keyType' )
+	EQUALITY caseIgnoreMatch
+	SINGLE-VALUE
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{128} )
+
+attributeType ( de.axn-software.ldap.oss.commons.crypto.attrs.private NAME ( 'keyPrivate' )
+	EQUALITY caseIgnoreMatch
+	SINGLE-VALUE
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributeType ( de.axn-software.ldap.oss.commons.crypto.attrs.public NAME ( 'keyPublic' )
+	EQUALITY caseIgnoreMatch
+	SINGLE-VALUE
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributeType ( de.axn-software.ldap.oss.commons.crypto.attrs.sshPublicKey NAME ( 'sshPublicKey' )
+	EQUALITY caseIgnoreMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+objectClass ( de.axn-software.ldap.oss.modules.sshKeyring.classes.ldapPublicKey NAME 'ldapPublicKey' SUP top AUXILIARY
+	DESC 'Object class to be used with the OpenSSH LDAP patch.'
+	MAY ( sshPublicKey ) )
+
+# This would be the correct declaration
+#
+# objectClass ( de.axn-software.ldap.oss.modules.sshKeyring.classes.sshKeyring NAME 'sshKeyring' SUP top STRUCTURAL 
+#	DESC 'Object class for subtrees representing a SSH keyring each. Assigning different CNs to multiple such sshKeyring subtrees allows your application(s) to distinguish between them.'
+#	MAY ( de.axn-software.ldap.oss.commons.crypto.attrs.identifier ) )
+
+objectClass ( de.axn-software.ldap.oss.modules.sshKeyring.classes.sshKeyring NAME 'sshKeyring' SUP top STRUCTURAL 
+	DESC 'Object class for subtrees representing a SSH keyring each. Assigning different CNs to multiple such sshKeyring subtrees allows your application(s) to distinguish between them.'
+	MAY ( keyIdentifier ) )
+
+objectClass ( de.axn-software.ldap.oss.modules.sshKeyring.classes.sshIdentity NAME 'sshIdentity' SUP top STRUCTURAL
+	DESC 'Object class for subtrees representing individual SSH identities. Such subtrees should be subentries of the sshKeyring subentry, but you are free to define sshIdentity subentries on a global basis for each user or system. Please note that the CNs of all of the sshIdentityS must be unique for a given DN.'
+	MUST ( keyIdentifier $ keyPrivate $ keyPublic $ keyType ) )
+

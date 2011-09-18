@@ -108,6 +108,7 @@ static int ctx_get(pam_handle_t *pamh,const char *username,struct pld_ctx **pctx
   rc=pam_get_data(pamh,PLD_CTX,(const void **)&ctx);
   if ((rc==PAM_SUCCESS)&&(ctx!=NULL))
   {
+    // THINK:axn can this ever happen?
     /* if the user is different clear the context */
     if ((ctx->user!=NULL)&&(strcmp(ctx->user,username)!=0))
       ctx_clear(ctx);
@@ -495,6 +496,48 @@ int pam_sm_acct_mgmt(pam_handle_t *pamh,int flags,int argc,const char **argv)
   return PAM_SUCCESS;
 }
 
+
+#define LOG_AND_NOTIFY_USER(msg, flags, tty, rc) \
+  pam_syslog(pamh,LOG_WARN,msg);\
+  if (rc != PAM_SUCCESS && (flags & PAM_SILENT) != PAM_SILENT) \
+  { \
+  \
+    return rc; \
+  }
+
+
+#define MSG_SSH_KEYRING_SYNC_FAILED "failed synchronizing ssh keyring: "
+
+static int ssh_keyring_sync(pam_handle_t *pamh, int flags, 
+                            pld_ctx *ctx, pld_cfg *cfg, int action,
+                            const char *username, const char *tty
+                           )
+{
+  // FIXME:axn must cache password on authenticate and must get rid of it ASAP
+  const char *passwd;
+  LOG_AND_NOTIFY_USER(MSG_SSH_KEYRING_SYNC_FAILED, flags, tty,
+                      pam_get_item(pamh, PAM_AUTHTOK, (const void**)&passwd))
+  /* TODO:axn implement
+   * pre:
+   * password is avail
+   * user_dn is stored in ctx
+   * action is open_session
+   * 
+   * on:
+   * is_silent = flags & PAM_SILENT != PAM_SILENT ? no : yes
+   * try get user home from passwd for uid
+   * try get ssh_keyring_all from nslcd for user_dn
+   *   for each key in keyring
+   *     answer = yes
+   *     if ! is_silent && key.private exists && key.private != existing key && cfg.ask_overwrite_existing_ssh_keys
+   *       answer = pam_prompt...
+   *     if answer == yes
+   *       sync key.private to local storage
+   *       sync key.public to local storage
+   */
+}
+
+
 /* PAM session open/close calls */
 static int pam_sm_session(pam_handle_t *pamh,int flags,int argc,
                           const char **argv,int action)
@@ -521,6 +564,16 @@ static int pam_sm_session(pam_handle_t *pamh,int flags,int argc,
   if (cfg.debug)
     pam_syslog(pamh,LOG_DEBUG,"session %s succeeded; session_id=%d",
                (action==NSLCD_ACTION_PAM_SESS_O)?"open":"close",ctx->sessid);
+
+#ifdef HAVE_SSH_KEYRING_SUPPORT
+  /* resync the ssh keyring (private and public keys) from ldap on session open/close */
+  if (cfg.sync_ssh_keyring) 
+  {
+    ssh_keyring_sync(pamh, flags, ctx, &cfg, action, 
+                     username, service, tty, rhost, ruser);
+  }
+#endif /* HAVE_SSH_KEYRING_SUPPORT */
+
   return PAM_SUCCESS;
 }
 
